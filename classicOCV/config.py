@@ -1,0 +1,10 @@
+HueLow = 165
+HueHigh = 179
+SatLow = 99
+SatHigh = 255
+ValLow = 82
+ValHigh = 255
+
+FILTER_KERNEL_SIZE = 7
+CLEAR_ITERATIONS = 5
+FILL_ITERATIONS = 10
