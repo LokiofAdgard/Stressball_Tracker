@@ -66,4 +66,4 @@ def center_to_centroid(frame, selected_contour, cross_size=10, cross_color=(0, 2
     cv2.putText(frame, f"dx: {dx}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, centroid_color, 2)
     cv2.putText(frame, f"dy: {dy}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, centroid_color, 2)
 
-    return frame, dx, dy
+    return frame, (2 * dx / w), (2 * dy / h)
