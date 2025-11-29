@@ -1,5 +1,5 @@
-from classicOCV.functions import *
-from serialController.functions import *
+from classicOCV import *
+from serialController import *
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 if not cap.isOpened():

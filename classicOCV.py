@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from classicOCV.config import *
+from config import *
 
 class ObjectTracker:
     def __init__(self):
