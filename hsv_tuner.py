@@ -5,7 +5,7 @@ import pyperclip
 def nothing(x):
     pass
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 cv2.namedWindow("Controls")
 cv2.createTrackbar("H Low", "Controls", 0, 179, nothing)
