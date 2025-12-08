@@ -14,9 +14,9 @@ FILL_ITERATIONS = 10
 
 # Serial ================================================================
 baudRate = 9600
-comPort = "COM4"
+comPort = "COM3"
 comPeriod = 0.2
-speed = 0.1
+speed = 0.012
 xinv = True
 yinv = True
 

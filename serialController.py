@@ -13,6 +13,8 @@ class SerialController:
         self.last_sent_time = time.time()
         self.xinv = xinv
         self.yinv = yinv
+
+        self.paused = True
         
         try:
             self.ser = serial.Serial(port, baud, timeout=0.1)
@@ -24,6 +26,9 @@ class SerialController:
         return max(-1.0, min(1.0, v))
 
     def update(self, dx, dy):
+        if(self.paused):
+            return
+        
         if self.xinv:
             dx = -dx
         if self.yinv:
@@ -37,7 +42,7 @@ class SerialController:
 
     def send(self):
         msg = f"{self.x:.3f} {self.y:.3f}\n"
-        # print(f"[SEND] {msg.strip()}")
+        print(f"[SEND] {msg.strip()}")
         if self.ser and self.ser.is_open:
             try:
                 self.ser.write(msg.encode('utf-8'))
