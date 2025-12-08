@@ -1,8 +1,9 @@
 import time
 import serial
+from config import *
 
 class SerialController:
-    def __init__(self, port="COM4", baud=9600, com_period=0.1, speed=0.01, xinv=True, yinv=True):
+    def __init__(self, port=comPort, baud=baudRate, com_period=comPeriod, speed=speed, xinv=xinv, yinv=yinv):
         self.x = 0.0
         self.y = 0.0
         self.ser = None
@@ -36,7 +37,7 @@ class SerialController:
 
     def send(self):
         msg = f"{self.x:.3f} {self.y:.3f}\n"
-        print(f"[SEND] {msg.strip()}")
+        # print(f"[SEND] {msg.strip()}")
         if self.ser and self.ser.is_open:
             try:
                 self.ser.write(msg.encode('utf-8'))

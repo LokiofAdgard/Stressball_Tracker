@@ -7,10 +7,19 @@ class ObjectTracker:
         self.filtered = None
         self.contour_frame = None
 
+        self.hueLow = HueLow
+        self.hueHigh = HueHigh
+        self.satLow = SatLow
+        self.satHigh = SatHigh
+        self.valLow = ValLow
+        self.valHigh = ValHigh
+
+        self.dynBox = False
+
     def get_hsv_mask(self, frame):
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        lower = np.array([HueLow, SatLow, ValLow])
-        upper = np.array([HueHigh, SatHigh, ValHigh])
+        lower = np.array([self.hueLow, self.satLow, self.valLow])
+        upper = np.array([self.hueHigh, self.satHigh, self.valHigh])
         mask = cv2.inRange(hsv, lower, upper)
         return mask
 
@@ -86,3 +95,50 @@ class ObjectTracker:
         self.contour_frame, dx, dy = self.center_to_centroid(out, selected)
 
         return dx, dy
+
+    def get_center_hsv_range(self, frame, n=boxSize, low_pct=40, high_pct=60):
+        h, w, _ = frame.shape
+        cx, cy = w // 2, h // 2
+
+        x1, x2 = cx - n//2, cx + n//2
+        y1, y2 = cy - n//2, cy + n//2
+
+        x1, y1 = max(x1, 0), max(y1, 0)
+        x2, y2 = min(x2, w), min(y2, h)
+
+        roi = frame[y1:y2, x1:x2]
+        hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+
+        # Flatten to 2D array of pixels
+        pixels = hsv_roi.reshape(-1, 3)
+
+        # Percentile per channel
+        min_vals = np.percentile(pixels, low_pct, axis=0)
+        max_vals = np.percentile(pixels, high_pct, axis=0)
+
+        self.hueLow  = np.clip(int(min_vals[0]) - hueAllowance, 0, 179)
+        self.satLow  = np.clip(int(min_vals[1]) - satAllowance, 0, 255)
+        self.valLow  = np.clip(int(min_vals[2]) - valAllowance, 0, 255)
+
+        self.hueHigh = np.clip(int(max_vals[0]) + hueAllowance, 0, 179)
+        self.satHigh = np.clip(int(max_vals[1]) + satAllowance, 0, 255)
+        self.valHigh = np.clip(int(max_vals[2]) + valAllowance, 0, 255)
+
+        print(self.hueLow, self.hueHigh)
+        print(self.satLow, self.satHigh)
+        print(self.valLow, self.valHigh)
+
+        print("Target Updated")
+
+
+    def draw_center_box(self, n=boxSize):
+        if (not self.dynBox):
+            return
+        h, w, _ = self.contour_frame.shape
+        cx, cy = w // 2, h // 2
+
+        x1, x2 = cx - n//2, cx + n//2
+        y1, y2 = cy - n//2, cy + n//2
+
+        cv2.rectangle(self.contour_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        self.contour_frame = self.contour_frame
