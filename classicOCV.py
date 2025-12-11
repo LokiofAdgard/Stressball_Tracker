@@ -37,8 +37,15 @@ class ObjectTracker:
 
     def get_selected_contour(self, contours):
         if not contours:
-            return None
-        return max(contours, key=cv2.contourArea)
+            return None, False
+        selected = max(contours, key=cv2.contourArea)
+        area = cv2.contourArea(selected)
+        
+        track = True
+        if(area < MIN_TRACK_AREA or area > MAX_TRACK_AREA):
+            track = False
+
+        return selected, track
 
     def draw_contours(self, frame, contours, selected):
         out = frame.copy()
@@ -82,6 +89,7 @@ class ObjectTracker:
         # Display Pixel Delta
         cv2.putText(frame, f"dx: {dx}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, centroid_color, 2)
         cv2.putText(frame, f"dy: {dy}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, centroid_color, 2)
+        cv2.putText(frame, f"area: {cv2.contourArea(selected_contour)}", (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.6, centroid_color, 2)
 
         return frame, (2 * dx / w), (2 * dy / h)
 
@@ -89,12 +97,12 @@ class ObjectTracker:
         mask = self.get_hsv_mask(frame)
         self.filtered = self.apply_filters(mask)
         contours = self.get_contours(self.filtered)
-        selected = self.get_selected_contour(contours)
+        selected, should_track = self.get_selected_contour(contours)
 
         out = self.draw_contours(frame, contours, selected)
         self.contour_frame, dx, dy = self.center_to_centroid(out, selected)
 
-        return dx, dy
+        return dx, dy, should_track
 
     def get_center_hsv_range(self, frame, n=boxSize, low_pct=40, high_pct=60):
         h, w, _ = frame.shape
@@ -124,12 +132,11 @@ class ObjectTracker:
         self.satHigh = np.clip(int(max_vals[1]) + satAllowance, 0, 255)
         self.valHigh = np.clip(int(max_vals[2]) + valAllowance, 0, 255)
 
-        print(self.hueLow, self.hueHigh)
-        print(self.satLow, self.satHigh)
-        print(self.valLow, self.valHigh)
+        # print(self.hueLow, self.hueHigh)
+        # print(self.satLow, self.satHigh)
+        # print(self.valLow, self.valHigh)
 
         print("Target Updated")
-
 
     def draw_center_box(self, n=boxSize):
         if (not self.dynBox):

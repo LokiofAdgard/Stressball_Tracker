@@ -11,12 +11,15 @@ FILTER_KERNEL_SIZE = 7
 CLEAR_ITERATIONS = 5
 FILL_ITERATIONS = 10
 
+MAX_TRACK_AREA = 40000
+MIN_TRACK_AREA = 300
+
 
 # Serial ================================================================
 baudRate = 9600
 comPort = "COM3"
 comPeriod = 0.2
-speed = 0.012
+speed = 0.009
 xinv = True
 yinv = True
 

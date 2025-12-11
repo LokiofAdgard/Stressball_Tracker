@@ -1,7 +1,7 @@
 from classicOCV import *
 from serialController import *
 
-cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 if not cap.isOpened():
     print("Error: Could not open camera.")
     exit()
@@ -15,9 +15,10 @@ try:
         if not ret:
             break
 
-        dx, dy = tracker.process(frame)
+        dx, dy, should_track = tracker.process(frame)
 
-        controller.update(dx, dy)
+        if(should_track):
+            controller.update(dx, dy)
         tracker.draw_center_box()
 
         cv2.imshow("Filtered Video", tracker.filtered)
@@ -30,6 +31,7 @@ try:
             tracker.get_center_hsv_range(tracker.contour_frame)
         elif key == ord('b'):
             tracker.dynBox = not tracker.dynBox
+            controller.paused = tracker.dynBox
         elif key == ord('p'):
             controller.paused = not controller.paused
 
