@@ -4,7 +4,8 @@
 This project showcases an object‑tracking system built with OpenCV and a servo‑mounted camera. The software identifies a predefined target in the camera’s field of view and continuously issues serial commands to a dedicated servo controller, ensuring the object remains centered on screen in real time. The hardware interface follows a fixed command syntax for pan and tilt control. Additionally, the system includes a mechanism for dynamically updating the target object, enabling adaptive tracking behavior.
 
 ### Controls
-Run main.py to start the script.
+Run main.py to start the script. The mask view and camera view will open in Paused mode. Press "p" to unpause and system will start tracking the preset target. Pressing "b" will pause the system and enter teach mode. Take any object and have it fill the green box in the center of the screen, then press "u". This will set target hsv values as calculated from within the green box.
+Press "b" to exit teach mode and the system will track the new object. 
 
 | Key | Action (wrt World Frame)|
 |----------|----------|
@@ -17,7 +18,7 @@ Run main.py to start the script.
 The project consists of 4 scripts:
  - main.py
  - classicOCV.py
- - classicOCV.pyserialController.py
+ - serialController.py
  - config.py
 
 ### classicOCV.py
@@ -47,7 +48,7 @@ def get_hsv_mask(self, frame):
     return mask
 ```
 
-"apply_filters()" first applies a median blur, then does erode/dilate to remove noise outside the target. Finally it does dialate/erode to remove noise inside the target. The kernel size and number of iterations are as defined in the config file.
+"apply_filters()" first applies a median blur, then does erode/dilate to remove noise outside the target. Finally it does dilate/erode to remove noise inside the target. The kernel size and number of iterations are as defined in the config file.
 ```python
 def apply_filters(self, mask):
     filtered = cv2.medianBlur(mask, FILTER_KERNEL_SIZE)
@@ -115,6 +116,39 @@ def center_to_centroid(self, frame, selected_contour, cross_size=10,
     return frame, (2 * dx / w), (2 * dy / h)
 ```
 
+The teach target feature uses the function "get_center_hsv_range()" to isolate the pixels in the marked box. It then removes a portion of the extreme values and finds the hsv values that describe the remaining pixels with a preset allowance as defined in the config file.
+```python
+def get_center_hsv_range(self, frame, n=boxSize, low_pct=40, high_pct=60):
+    h, w, _ = frame.shape
+    cx, cy = w // 2, h // 2
+
+    x1, x2 = cx - n//2, cx + n//2
+    y1, y2 = cy - n//2, cy + n//2
+
+    x1, y1 = max(x1, 0), max(y1, 0)
+    x2, y2 = min(x2, w), min(y2, h)
+
+    roi = frame[y1:y2, x1:x2]
+    hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+
+    # Flatten to 2D array of pixels
+    pixels = hsv_roi.reshape(-1, 3)
+
+    # Percentile per channel
+    min_vals = np.percentile(pixels, low_pct, axis=0)
+    max_vals = np.percentile(pixels, high_pct, axis=0)
+
+    self.hueLow  = np.clip(int(min_vals[0]) - hueAllowance, 0, 179)
+    self.satLow  = np.clip(int(min_vals[1]) - satAllowance, 0, 255)
+    self.valLow  = np.clip(int(min_vals[2]) - valAllowance, 0, 255)
+
+    self.hueHigh = np.clip(int(max_vals[0]) + hueAllowance, 0, 179)
+    self.satHigh = np.clip(int(max_vals[1]) + satAllowance, 0, 255)
+    self.valHigh = np.clip(int(max_vals[2]) + valAllowance, 0, 255)
+
+    print("Target Updated")
+```
+
 ### serialController.py
 This script receives dx and dy values and converts them into serial commands for the servo controller. It maintains the current servo position to compute relative movements and determines how pixel displacement translates into pan and tilt adjustments. It also defines communication parameters such as baud rate and transmission frequency.
 
@@ -136,7 +170,7 @@ def update(self, dx, dy):
         self.last_sent_time = time.time()
 ```
 
-"send()" function generates a serial message in the predefined format "P T" where P and T are pan and tilt values from -1 to +1. It then transmits the command over serial if serial is available.
+"send()" function generates a serial message in the predefined format "P T" where P and T are pan and tilt values from -1.00 to +1.00 It then transmits the command over serial if serial is available.
 ```python
 def send(self):
     msg = f"{self.x:.3f} {self.y:.3f}\n"
@@ -159,6 +193,13 @@ This utility script provides an interactive interface for tuning HSV color range
 
 
 ## Discussion
+The system is capable of reliably tracking the target, however, there is a noticeable latency in real‑time operation. In practice, the tracker may require up to 1.5 seconds to re‑center the object. A significant contributor to this delay is hardware related. Experimental testing showed that transmitting serial commands at rates higher than 5 Hz causes the controller to crash. This upper limit on command frequency, combined with the inherent mechanical response time of the servos, introduces unavoidable lag into the control loop.
+
+In principle, software based prediction methods such as a Kalman filter could be used to compensate for this delay. However, the system currently lacks an absolute reference frame for motion. The tracker cannot distinguish whether observed pixel displacement is caused by target motion or by the camera’s own servo movement, since the servo velocities are unknown and unmeasured. Without a reliable estimate of absolute target velocity, any state estimator that incorporates velocity, such as a PID and Kalman filter, becomes ineffective.
+
+A potential future enhancement would be to estimate target motion relative to static background features. By anchoring motion to fixed points in the scene, the system could infer true target velocity independent of servo motion. This would provide the missing state information required to implement a meaningful Kalman filter or similar predictive control strategy.
+
+Another strategy that was considered was to wait for the mechanical controller to respond to the command before transmitting the next. This was decided against because this brings a certain randomness in the system and for the given x and y correction speeds, a faster burst of commands may severely overshoot the target. Instead a fixed delay of 0.2 s was used in between commands.
 
 ## Links
  - [Github Repository](https://github.com/LokiofAdgard/Stressball_Tracker.git)
