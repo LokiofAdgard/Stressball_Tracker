@@ -18,8 +18,9 @@ MIN_TRACK_AREA = 300
 # Serial ================================================================
 baudRate = 9600
 comPort = "COM3"
-comPeriod = 0.2
-speed = 0.009
+comPeriod = 0.15
+speedx = 0.009
+speedy = 0.014
 xinv = True
 yinv = True
 

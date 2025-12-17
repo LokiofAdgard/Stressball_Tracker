@@ -3,12 +3,13 @@ import serial
 from config import *
 
 class SerialController:
-    def __init__(self, port=comPort, baud=baudRate, com_period=comPeriod, speed=speed, xinv=xinv, yinv=yinv):
+    def __init__(self, port=comPort, baud=baudRate, com_period=comPeriod, speedx=speedx, speedy=speedy, xinv=xinv, yinv=yinv):
         self.x = 0.0
         self.y = 0.0
         self.ser = None
         
-        self.speed = speed
+        self.speedx = speedx
+        self.speedy = speedy
         self.com_period = com_period
         self.last_sent_time = time.time()
         self.xinv = xinv
@@ -33,8 +34,8 @@ class SerialController:
             dx = -dx
         if self.yinv:
             dy = -dy
-        self.x = self.clamp(self.x + (dx * self.speed))
-        self.y = self.clamp(self.y + (dy * self.speed))
+        self.x = self.clamp(self.x + (dx * self.speedx))
+        self.y = self.clamp(self.y + (dy * self.speedy))
 
         if time.time() > (self.last_sent_time + self.com_period):
             self.send()
