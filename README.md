@@ -203,7 +203,7 @@ Another strategy that was considered was to wait for the mechanical controller t
 
 ## Links
  - [Github Repository](https://github.com/LokiofAdgard/Stressball_Tracker.git)
- - [Demonstration Video]()
+ - [Demonstration Video](https://youtu.be/iI7HDNyXQh4)
 
 ## References
  - ChatGPT was used to generate the sliders interface for the hsv_tuner.py script
